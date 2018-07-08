@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>微信信访</title>
+
+  <link rel="stylesheet" href="./src/css/weui.css" />
+  <link rel="stylesheet" href="./src/css/weui2.css" />
+  <link rel="stylesheet" href="./src/css/weui3.css" />
+  <link rel="stylesheet" href="./src/css/index.css" />
+  <script src="./src/js/zepto.js"></script>
+  <script src="./src/js/zepto.min.js"></script>
+  <script src="./src/js/iscroll.js"></script>
+  <script src="./src/js/picker.js"></script>
+  <script src="./src/js/lrz.min.js"></script>
+  <script>
+    $(function () {
+      //底部导航标签
+      $('.weui_tab').tab({
+        defaultIndex: 0,
+        activeClass: 'weui_bar_item_on',
+        onToggle: function (index) {
+          if (index > 0) {
+            // alert(index)
+          }
+        }
+      });
+
+      // 选择写信类别
+      $("#lClassify").picker({
+        title: "信访的类别",
+        toolbarCloseText: '确定',
+        cols: [
+          {
+            textAlign: 'center',
+            values: ['A类', 'B类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类'],
+            displayValues: ['A类', 'B类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类'],
+          }
+        ]
+      });
+
+      //文本内容字数限制
+      var max = $('#count_max').text();
+      $('#lContent').on('input', function () {
+        var text = $(this).val();
+        var len = text.length;
+        $('#count').text(len);
+        if (len > max) {
+          $(this).closest('.weui_cell').addClass('weui_cell_warn');
+        }
+        else {
+          $(this).closest('.weui_cell').removeClass('weui_cell_warn');
+        }
+      });
+
+      //点击提交按钮，发送信件内容给后端
+      $("#LetterSubmitBtn").click(function () {
+        $.ajax({
+          type: "POST",
+          url: "",
+          dataType: "json",
+          data: {
+            lClassify: $('#lClassify').val(),
+            lTitle: $('#lTitle').val(),
+            lContent: $('#lContent').val(),
+            lImg: $('#lImg').val(),
+          },
+          success: function (res) {//服务器（接口）返回来的数据
+            if (res.code == '200') {//如果是200，说明提交成功
+              $.toast("提交成功");
+            } else {
+              $.toast("提交失败");
+            }
+          }
+        })
+      });
+
+      //点击加载我的信访
+      $("#myLetter").click(function () {
+        $.ajax({
+          type: 'GET',
+          url: '',
+          dataType: 'json',
+          success: function (data) {
+            var result = '';
+            for (var i = 0; i < data.lists.length; i++) {
+              result += ' <div class="weui_panel_hd">'
+                + data.lists[i].lClassify + '</div>'
+                + '<div class="weui_panel_bd">'
+                + '<a href="javascript:void(0);" class="weui_media_box weui_media_appmsg">' + data.List[i].classify + '<div class="weui_media_hd">' + '<img class="weui_media_appmsg_thumb" alt="我的信访" src="' + data.Lists[i].contentImgUrls + '">'
+                + '</div>'
+                + '<div class="weui_media_bd">' + '<h4 class="weui_media_title">' + data.Lists[i].title + ' </h4>' + '<p class="weui_media_desc">' + data.Lists[i].content + '</p>' + '</div>' + '</a>' + '</div>' + '<a class="weui_panel_ft" href="./progress.html">' + 查看进度 + '</a>';
+
+            }
+          }
+        });
+      });
+
+
+
+    });
+
+
+
+    //多图片不压缩上传
+    function previewImage(file) {
+      var MAXWIDTH = 100;
+      var MAXHEIGHT = 200;
+      for (var i = 0; i < file.files.length; i++) {
+
+        if (file.files && file.files[i]) {
+          var reader = new FileReader();
+          reader.onload = function (evt) {
+            $('#lImg').append('<li class="weui_uploader_file" style="background-image:url(' + evt.target.result + ')"></li>');
+          };
+          reader.readAsDataURL(file.files[i]);
+        }
+      }
+    };
+  </script>
+</head>
+
+<body ontouchstart>
+  <div class="weui_tab tab-bottom">
+    <div class="weui_tab_bd">
+
+      <!-- 写信模板 -->
+      <div class="weui_tab_bd_item">
+        <form id="form">
+          <div class="weui_cells weui_cells_form ">
+
+            <!-- 信访类别 -->
+            <div class="weui_cell">
+              <div class="weui_cell_hd">
+                <label class="weui_label">类别:</label>
+              </div>
+              <div class="weui_cell_bd weui_cell_primary">
+                <input class="weui_input" type="text" placeholder="请选择类别" id="lClassify" />
+              </div>
+            </div>
+
+            <!-- 信访标题 -->
+            <div class="weui_cell">
+              <div class="weui_cell_hd">
+                <label for="" class="weui_label">标题：</label>
+              </div>
+              <div class="weui_cell_bd weui_cell_primary">
+                <input class="weui_input" id="lTitle" type="text" placeholder="请输入标题" />
+              </div>
+            </div>
+
+            <!-- 信访内容 -->
+            <div class="weui_cell">
+              <div class="weui_cell_bd weui_cell_primary">
+                <textarea id="lContent" class="weui_textarea" placeholder="请输入内容" rows="5"></textarea>
+                <div class="weui_textarea_counter">
+                  <span id="count">0</span>/
+                  <span id="count_max">500</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 信访图片 -->
+            <div class="weui_cell">
+              <div class="weui_cell_bd weui_cell_primary">
+                <div class="weui_uploader">
+                  <div class="weui_uploader_bd">
+                    <ul class="weui_uploader_files" id="lImg">
+                    </ul>
+                    <div class="weui_uploader_input_wrp">
+                      <input class="weui_uploader_input" type="file" accept="image/jpg,image/jpeg,image/png,image/gif" onchange="previewImage(this)"
+                        multiple />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="weui_btn_area">
+              <a id="LetterSubmitBtn" href="javascript:" class="weui_btn weui_btn_primary">提交</a>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- 智能问答 -->
+      <div class="weui_tab_bd_item">
+        <h3>智能问答</h3>
+      </div>
+
+      <!-- 我的信访 -->
+
+      <div class="weui_tab_bd_item">
+        <div class="weui_panel weui_panel_access" id="myLetter">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部导航标签 -->
+    <div class="weui_tabbar ">
+      <a href="javascript:;" class="weui_tabbar_item weui_bar_item_on">
+        <p class="weui_tabbar_label page-tabbar">写信</p>
+      </a>
+      <a href="javascript:;" class="weui_tabbar_item">
+        <p class="weui_tabbar_label page-tabbar">智能问答</p>
+      </a>
+      <a href="javascript:;" class="weui_tabbar_item">
+        <p class="weui_tabbar_label page-tabbar">我的信访</p>
+      </a>
+    </div>
+  </div>
+
+
+</body>
+
+</html>
