@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>微信JS-SDK Demo</title>
+
+    <script src="./src/js/zepto.min.js"></script>
+    <script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js"></script>
+    <script>
+        wx.config({
+            /* debug: true, */
+            appId: appid,
+            timestamp: timestamp,
+            nonceStr: nonceStr,
+            signature: signature,
+            jsApiList: [
+                'chooseImage', //拍照或从手机相册中选图接口
+                'previewImage', //预览图片接口
+                'uploadImage', //上传图片接口
+                'downloadImage' //下载图片接口
+            ]
+        });
+    </script>
+</head>
+
+<body ontouchstart="">
+    <span class="desc">拍照或从手机相册中选图接口</span>
+    <button class="btn btn_primary" id="chooseImage">chooseImage</button>
+    <span class="desc">预览图片接口</span>
+    <button class="btn btn_primary" id="previewImage">previewImage</button>
+    <span class="desc">上传图片接口</span>
+    <button class="btn btn_primary" id="uploadImage">uploadImage</button>
+    <span class="desc">下载图片接口</span>
+    <button class="btn btn_primary" id="downloadImage">downloadImage</button>
+
+    <script>
+        wx.ready(function () {
+            // 1 判断当前版本是否支持指定 JS 接口，支持批量判断
+            document.querySelector('#checkJsApi').onclick = function () {
+                wx.checkJsApi({
+                    jsApiList: [
+                        'getNetworkType',
+                        'previewImage'
+                    ],
+                    success: function (res) {
+                        alert(JSON.stringify(res));
+                    }
+                });
+            };
+        })
+        // 5 图片接口
+        // 5.1 拍照、本地选图
+        var images = {
+            localId: [],
+            serverId: []
+        };
+        
+        $('#chooseImage').on('click', function () {
+            wx.chooseImage({
+                count: 1, // 最多能选择多少张图片，默认9
+                sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+                sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+                success: function (res) {
+                    $('.previewImage').prop('src',res.localIds[0]);
+                    images.localId = res.localIds;
+                    alert('已选择 ' + res.localIds.length + ' 张图片');
+                }
+            });
+        });
+
+        // 5.2 图片预览
+        $('#previewImage').on('click', function () {
+            wx.previewImage({
+                current: 'http://img5.douban.com/view/photo/photo/public/p1353993776.jpg',
+                urls: [
+                    'http://img3.douban.com/view/photo/photo/public/p2152117150.jpg',
+                    'http://img5.douban.com/view/photo/photo/public/p1353993776.jpg',
+                    'http://img3.douban.com/view/photo/photo/public/p2152134700.jpg'
+                ]
+            });
+        });
+
+        // 5.3 上传图片
+        document.querySelector('#uploadImage').onclick = function () {
+            if (images.localId.length == 0) {
+                alert('请先使用 chooseImage 接口选择图片');
+                return;
+            }
+            var i = 0,
+                length = images.localId.length;
+            images.serverId = [];
+
+            function upload() {
+                wx.uploadImage({
+                    localId: images.localId[i],
+                    success: function (res) {
+                        i++;
+                        //alert('已上传：' + i + '/' + length);
+                        images.serverId.push(res.serverId);
+                        if (i < length) {
+                            upload();
+                        }
+                    },
+                    fail: function (res) {
+                        alert(JSON.stringify(res));
+                    }
+                });
+            }
+            upload();
+        };
+
+        // 5.4 下载图片
+        document.querySelector('#downloadImage').onclick = function () {
+            if (images.serverId.length === 0) {
+                alert('请先使用 uploadImage 上传图片');
+                return;
+            }
+            var i = 0,
+                length = images.serverId.length;
+            images.localId = [];
+
+            function download() {
+                wx.downloadImage({
+                    serverId: images.serverId[i],
+                    success: function (res) {
+                        i++;
+                        alert('已下载：' + i + '/' + length);
+                        images.localId.push(res.localId);
+                        if (i < length) {
+                            download();
+                        }
+                    }
+                });
+            }
+            download();
+        };
+    </script>
+    <!-- <script>
+    // 图片测试
+    // 允许上传的图片类型
+    var allowTypes = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif'];
+    // 1024KB，也就是 1MB
+    var maxSize = 1024 * 1024;
+    // 图片最大宽度
+    var maxWidth = 300;
+    // 最大上传图片数量
+    var maxCount = 9;
+    $('.js_file').on('change', function (event) {
+      var files = event.target.files;
+
+      // 如果没有选中文件，直接返回
+      if (files.length === 0) {
+        return;
+      }
+
+      for (var i = 0, len = files.length; i < len; i++) {
+        var file = files[i];
+        var reader = new FileReader();
+
+        // 如果类型不在允许的类型范围内
+        if (allowTypes.indexOf(file.type) === -1) {
+          $.weui.alert({
+            text: '该类型不允许上传'
+          });
+          continue;
+        }
+
+        if (file.size > maxSize) {
+          $.weui.alert({
+            text: '图片太大，不允许上传'
+          });
+          continue;
+        }
+
+        if ($('.weui_uploader_file').length >= maxCount) {
+          $.weui.alert({
+            text: '最多只能上传' + maxCount + '张图片'
+          });
+          return;
+        }
+
+        reader.onload = function (e) {
+          var img = new Image();
+          img.onload = function () {
+            // 不要超出最大宽度
+            var w = Math.min(maxWidth, img.width);
+            // 高度按比例计算
+            var h = img.height * (w / img.width);
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            // 设置 canvas 的宽度和高度
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(img, 0, 0, w, h);
+            var base64 = canvas.toDataURL('image/png');
+
+            // 插入到预览区
+            var $preview = $(
+              '<li class="weui_uploader_file weui_uploader_status" style="background-image:url(' +
+              base64 + ')"><div class="weui_uploader_status_content">0%</div></li>');
+            $('.weui_uploader_files').append($preview);
+            var num = $('.weui_uploader_file').length;
+            $('.js_counter').text(num + '/' + maxCount);
+
+            // 然后假装在上传，可以post base64格式，也可以构造blob对象上传，也可以用微信JSSDK上传
+
+            var progress = 0;
+
+            function uploading() {
+              $preview.find('.weui_uploader_status_content').text(++progress + '%');
+              if (progress < 100) {
+                setTimeout(uploading, 30);
+              } else {
+                // 如果是失败，塞一个失败图标
+                //$preview.find('.weui_uploader_status_content').html('<i class="weui_icon_warn"></i>');
+                $preview.removeClass('weui_uploader_status').find('.weui_uploader_status_content').remove();
+              }
+            }
+            setTimeout(uploading, 30);
+          };
+
+          img.src = e.target.result;
+
+          $.post("http://192.168.1.105:80/postLetter", {
+            img: e.target.result
+          }, function (res) {
+            if (res.img != '') {
+              alert('upload success');
+              $('#showimg').html('<img src="' + res.img + '">');
+            } else {
+              alert('upload fail');
+            }
+          }, 'json');
+        };
+        reader.readAsDataURL(file);
+
+      }
+    });
+  </script> -->
+
+
+</body>
+
+</html>

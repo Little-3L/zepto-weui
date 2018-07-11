@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=0,viewport-fit=cover">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>微信信访</title>
+
+  <link rel="stylesheet" href="./src/css/weui.css" />
+  <link rel="stylesheet" href="./src/css/weui2.css" />
+  <link rel="stylesheet" href="./src/css/weui3.css" />
+  <link rel="stylesheet" href="./src/css/index.css" />
+
+  <script src="./src/js/zepto.js"></script>
+  <script src="./src/js/zepto.min.js"></script>
+  <script src="./src/js/iscroll.js"></script>
+  <script src="./src/js/picker.js"></script>
+  <script src="./src/js/lrz.min.js"></script>
+  <script src="http://res.wx.qq.com/open/js/jweixin-1.2.0.js"></script>
+
+
+  <!-- 公开信访信件上拉加载更多 -->
+  <script>
+    /*初始化*/
+    var counter = 0; /*计数器*/
+    var pageStart = 0; /*offset*/
+    var pageSize = 10; /*size*/
+
+    $(function () {
+
+      // /*初始化*/
+      // var counter = 0; /*计数器*/
+      // var pageStart = 1; /*offset*/
+      // var pageSize = 10; /*size*/
+
+      /*首次加载*/
+      getData(pageStart, pageSize);
+
+      /*监听加载更多*/
+      $('.letter-load-more').click(function () {
+        counter++;
+        // pageStart = counter + pageSize;
+        pageStart = 0;
+        getData(pageStart, pageSize);
+      });
+    });
+
+    function getData(offset, size) {
+      $.ajax({
+        type: 'POST',
+        url: 'http://192.168.1.105:80/allLetters?page=' + counter,
+        xhrFields: {
+          withCredentials: true
+        },
+        dataType: 'json',
+        success: function (dataAll) {
+
+          var data = dataAll.data.list;
+          var sum = dataAll.data.list.length;
+          var result = '';
+
+          /** 实现拼接html内容并append到页面 **/
+
+          console.log(offset, size, sum);
+
+          /*如果剩下的记录数不够分页，就让分页数取剩下的记录数
+           * 例如分页数是5，只剩2条，则只取2条
+           *
+           * 实际MySQL查询时不写这个不会有问题
+           */
+          if (sum - offset < size) {
+            size = sum - offset;
+          }
+
+          /*使用for循环模拟SQL里的limit(offset,size)*/
+          for (var i = offset; i < (offset + size); i++) {
+            result = result + '<div class="weui_media_box weui_media_text">' +
+              '<a href="' + data[i].url + '" target="_blank"><h4 class="weui_media_title">' + data[i].letterTitle +
+              '</h4></a>' +
+              '<p class="weui_media_desc">' + data[i].letterContent + '</p>' +
+              '</div>';
+          }
+
+          $('.letter-list').append(result);
+
+          /*******************************************/
+
+          /*隐藏more按钮*/
+          if ((offset + size) >= sum) {
+            $(".letter-load-more").show();
+          } else {
+            $(".letter-load-more").hide();
+          }
+        },
+        error: function (xhr, type) {
+          alert('Ajax error!');
+        }
+      });
+    }
+  </script>
+
+  <!-- 我的信访信件 -->
+  <script>
+    /*初始化*/
+    var counter = 0; /*计数器*/
+    var pageStart = 0; /*offset*/
+    var pageSize = 10; /*size*/
+
+    $(function () {
+
+      /*首次加载*/
+      getMyData(pageStart, pageSize);
+      $(".MyImg").hide();
+      $(".MyImg").eq(0).show();
+
+      /*监听加载更多*/
+      $('.my-letter-load-more').click(function () {
+        counter++;
+        // pageStart = counter + pageSize;
+        pageStart = 0;
+        getMyData(pageStart, pageSize);
+      });
+    });
+
+    function getMyData(offset, size) {
+      $.ajax({
+        type: 'POST',
+        url: 'http://192.168.1.105:80/userLetters?page=' + counter,
+        xhrFields: {
+          withCredentials: true
+        },
+        dataType: 'json',
+        success: function (dataAll) {
+
+          var data = dataAll.data.list;
+          var sum = dataAll.data.list.length;
+          var result = '';
+
+          /** 实现拼接html内容并append到页面 **/
+
+          console.log(offset, size, sum);
+
+          /*如果剩下的记录数不够分页，就让分页数取剩下的记录数
+           * 例如分页数是5，只剩2条，则只取2条
+           */
+          if (sum - offset < size) {
+            size = sum - offset;
+          }
+
+          //如果读取data为0，则显示“您还没有任何信访！”
+          if (sum == 0) {
+            result = '<p>您还没有任何信访！</p>'
+          }
+          /*使用for循环模拟SQL里的limit(offset,size)*/
+          for (var i = offset; i < (offset + size); i++) {
+            result = result + ' <div class="weui_panel_hd">' + data[i].letterBrand + '</div>' +
+              '<div class="weui_panel_bd">' +
+              '<a href="javascript:void(0);" class="weui_media_box weui_media_appmsg">' +
+              '<div class="weui_media_hd">' +
+              '<img class="weui_media_appmsg_thumb MyImg" style="display:none" src="http://192.168.1.105:80/' +
+              data[i].images + '"/>' + '</div>' + '<div class="weui_media_bd">' +
+              '<h4 class="weui_media_title">' +
+              data[i].letterTitle + ' </h4>' + '<p class="weui_media_desc">' + data[i].letterContent + '</p>' +
+              '</div>' + '</a>' + '</div>' + '<a class="weui_panel_ft" href="./progress.html">' + "查看详情" +
+              '</a>' + '<a class="weui_panel_ft" href="./progress.html">' + "查看进度" +
+              '</a>' + '<a class="weui_panel_ft" href="./progress.html">' + "结果反馈" +
+              '</a>';
+          }
+
+
+          $('#MyLetter').append(result);
+
+
+          /*隐藏more按钮*/
+          // if ((offset + size) >= sum) {
+          //   $(".my-letter-load-more").show();
+          // } else {
+          //   $(".my-letter-load-more").hide();
+          // }
+        },
+        error: function (xhr, type) {
+          alert('Ajax error!');
+        }
+      });
+    }
+  </script>
+
+  <!-- 微信jssdk图片上传 -->
+  <script>
+    // 通过config接口注入权限验证配置
+    wx.config({
+      debug: true, //测试是为true，可打印测试信息，完成后则为false
+      appId: "", // 必填，公众号的唯一标识
+      timestamp: $("#timestamp").val(), // 必填，生成签名的时间戳
+      nonceStr: $("#nonceStr").val(), // 必填，生成签名的随机串
+      signature: $("#signature").val(), // 必填，签名
+      jsApiList: [
+        "chooseImage",
+        "uploadImage",
+        "downloadImage"
+      ] // 必填，需要使用的JS接口列表，
+    })
+
+    //js请求，拿到3个参数
+    function wxCheckJs() {
+      $.ajax({
+        url: weixinUrl + "/main.html",
+        type: 'post',
+        dataType: 'json',
+        async: false,
+        success: function (data) {
+          document.getElementById("timestamp").value = data.timestamp;
+          document.getElementById("nonceStr").value = data.nonceStr;
+          document.getElementById("signature").value = data.signature;
+        },
+        error: function (e) {
+          alert("请求错误！")
+        }
+      })
+    }
+
+    function choseOrTake() {
+      wx.ready(function () {
+        //拍照或从手机相册中选图接口
+        wx.chooseImage({
+          count: 1, // 最多能选择多少张图片，默认9
+          sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+          sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+          success: function (res) {
+            var localIds = res.localIds; // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+            //上传图片接口
+            wx.uploadImage({
+              localId: localIds.toString(), // 需要上传的图片的本地ID，由chooseImage接口获得
+              isShowProgressTips: 1, // 默认为1，显示进度提示
+              success: function (res) {
+                var serverId = res.serverId; // 返回图片的服务器端ID
+                $.ajax({
+                  url: "/main.html",
+                  dataType: "json",
+                  async: false,
+                  contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+                  data: {
+                    "mediaId": serverId
+                  },
+                  type: "POST",
+                  timeout: 30000,
+                  success: function (data, textStatus) {
+                    $('#previewImg').val(data);
+                    $.toast('上传成功', 'text');
+                  },
+                  error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    $.toast('上传错误,请稍候重试!', 'text');
+                  }
+                });
+
+                //在页面显示图片
+                var src = 'src="' + localId + '"';
+                var html = "";
+                html +=
+                  '<li class="weui_uploader_file weui_uploader_status" ' + '<img src="'+ src +'/>'
+                  +'</li>';
+                $("#previewImg").append(html);
+              },
+              fail: function (res) {
+                $.toast('上传错误,请稍候重试!', 'text');
+              }
+            });
+          }
+        });
+      });
+    }
+  </script>
+  
+  <script>
+    $(function () {
+      //底部导航标签
+      $('.weui_tab').tab({
+        defaultIndex: 0,
+        activeClass: 'weui_bar_item_on',
+        onToggle: function (index) {
+          if (index > 0) {
+            // alert(index)
+          }
+        }
+      });
+
+      //写信界面
+      // 选择写信类别
+      $("#lClassify").picker({
+        title: "信访的类别",
+        toolbarCloseText: '确定',
+        cols: [{
+          textAlign: 'center',
+          values: ['A类', 'B类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类'],
+          displayValues: ['A类', 'B类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类', 'XX类'],
+        }]
+      });
+
+      //文本内容字数限制
+      var max = $('#count_max').text();
+      $('#lContent').on('input', function () {
+        var text = $(this).val();
+        var len = text.length;
+        $('#count').text(len);
+        if (len > max) {
+          $(this).closest('.weui_cell').addClass('weui_cell_warn');
+        } else {
+          $(this).closest('.weui_cell').removeClass('weui_cell_warn');
+        }
+      });
+
+      //点击提交按钮，发送信件内容给后端
+      //创建FormData对象
+      var datas = new FormData();
+      //为FormData对象添加数据
+      datas.append('brand', $('#lClassify').val());
+      datas.append('title', $('#lTitle').val());
+      datas.append('content', $('#lContent').val());
+
+      $("#LetterSubmitBtn").click(function () {
+        $.ajax({
+          type: "POST",
+          url: "http://192.168.1.105:80/postLetter",
+          dataType: "json",
+          contentType: false, //不可缺
+          processData: false, //不可缺
+          xhrFields: {
+            withCredentials: true
+          },
+          data: datas,
+          success: function (res) { //服务器（接口）返回来的数据
+            if (res.code == 200) { //如果是200，说明提交成功
+              alert("提交成功");
+            } else {
+              alert("提交失败");
+            }
+          }
+        })
+      });
+
+    });
+
+    //弹出框隐藏
+    function showmark() {
+      $('.weui_mask').addClass('weui_mask_visible');
+      $('.weui-custom-pop').addClass('weui-dialog-visible');
+    }
+
+    function hidemark() {
+      $('.weui_mask').removeClass('weui_mask_visible');
+      $('.weui-custom-pop').removeClass('weui-dialog-visible');
+    }
+  </script>
+</head>
+
+<body ontouchstart>
+  <div class="weui_tab tab-bottom">
+    <div class="weui_tab_bd">
+
+      <!-- 公开信访 -->
+      <div class="weui_tab_bd_item">
+
+        <div class="content">
+          <div class="weui_panel weui_panel_access">
+            <div class="weui_panel_hd">公开信访信件</div>
+            <div class="weui_panel_bd letter-list">
+            </div>
+          </div>
+          <!--加载更多按钮-->
+          <div class="letter-load-more">加载更多</div>
+        </div>
+
+      </div>
+
+      <!-- 写信模板 -->
+      <div class="weui_tab_bd_item">
+        <form id="form">
+          <div class="weui_cells weui_cells_form ">
+
+            <!-- 信访类别 -->
+            <div class="weui_cell">
+              <div class="weui_cell_hd">
+                <label class="weui_label">类别:</label>
+              </div>
+              <div class="weui_cell_bd weui_cell_primary">
+                <input class="weui_input" type="text" placeholder="请选择类别" id="lClassify" />
+              </div>
+            </div>
+
+            <!-- 信访标题 -->
+            <div class="weui_cell">
+              <div class="weui_cell_hd">
+                <label for="" class="weui_label">标题：</label>
+              </div>
+              <div class="weui_cell_bd weui_cell_primary">
+                <input class="weui_input" id="lTitle" type="text" placeholder="请输入标题" />
+              </div>
+            </div>
+
+            <!-- 信访内容 -->
+            <div class="weui_cell">
+              <div class="weui_cell_bd weui_cell_primary">
+                <textarea id="lContent" class="weui_textarea" placeholder="请输入内容" rows="5"></textarea>
+                <div class="weui_textarea_counter">
+                  <span id="count">0</span>/
+                  <span id="count_max">500</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 信访图片 -->
+            <div class="weui_uploader">
+              <div class="weui_uploader_bd upimg">
+                <ul class="weui_uploader_files" type="file" name="previewImg" id="previewImg">
+                  <!-- 预览图插入到这 -->
+                </ul>
+                <div class="weui_uploader_input_wrp">
+                  <input class="weui_uploader_input js_file" onclick="choseOrTake()" id="chooseImage" type="file" accept="image/jpg,image/jpeg,image/png,image/gif"
+                    multiple="">
+                </div>
+              </div>
+            </div>
+
+            <!-- 隐藏的框，将拿到的3个参数值放进去，然后再去配置config -->
+            <input type="hidden" id="timestamp" />
+            <input type="hidden" id="nonceStr" />
+            <input type="hidden" id="signature" />
+
+
+            <!-- 提交按钮 -->
+            <div class="weui_btn_area">
+              <a href="javascript:showmark();" class="weui_btn weui_btn_primary">提交</a>
+            </div>
+
+            <!-- 弹出框 -->
+            <div class="weui_mask"></div>
+            <div class="weui-custom-pop">
+              <div class="close" onclick="hidemark()">
+                <i class="icon icon-95 f25"></i>
+              </div>
+              <p class="weui-custom-hd">您是否同意公开此信访？</p>
+
+              <div class="weui-custom-ft">
+                <a href="javascript:;" id="LetterSubmitBtn">不同意</a>
+                <a href="javascript:;" id="LetterSubmitBtn">同意</a>
+              </div>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- 智能问答 -->
+      <div class="weui_tab_bd_item">
+        <h3>智能问答</h3>
+      </div>
+
+      <!-- 我的信访 -->
+
+      <div class="weui_tab_bd_item">
+        <div class="weui_panel weui_panel_access" id="MyLetter">
+        </div>
+        <!--加载更多按钮-->
+        <!-- <div class="my-letter-load-more">加载更多</div> -->
+      </div>
+
+    </div>
+
+    <!-- 底部导航标签 -->
+    <div class="weui_tabbar ">
+      <a href="javascript:;" class="weui_tabbar_item weui_bar_item_on">
+        <p class="weui_tabbar_label page-tabbar">公开信访</p>
+      </a>
+      <a href="javascript:;" class="weui_tabbar_item">
+        <p class="weui_tabbar_label page-tabbar">写信</p>
+      </a>
+      <a href="javascript:;" class="weui_tabbar_item">
+        <p class="weui_tabbar_label page-tabbar">智能问答</p>
+      </a>
+      <a href="javascript:;" class="weui_tabbar_item">
+        <p class="weui_tabbar_label page-tabbar">我的信访</p>
+      </a>
+    </div>
+  </div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover">
+  <title>用户绑定</title>
+
+  <link rel="stylesheet" href="./src/css/weui.css" />
+  <link rel="stylesheet" href="./src/css/weui2.css" />
+  <link rel="stylesheet" href="./src/css/weui3.css" />
+  <link rel="stylesheet" href="./src/css/index.css" />
+  <script src="./src/js/zepto.js"></script>
+  <script src="./src/js/zepto.min.js"></script>
+  <script src="./src/js/picker.js"></script>
+  <script>
+    $(function () {
+
+      // 用户选择所在街道 
+      $("#streetInfo").picker({
+        title: "街道地点",
+        toolbarCloseText: '确定',
+        cols: [{
+          textAlign: 'center',
+          values: ['乔司街道', '临平街道', 'XX街道', 'XX街道', 'XX街道', 'XX街道', 'XX街道', 'XX街道'],
+          displayValues: ['乔司街道', '临平街道', 'XX街道', 'XX街道', 'XX街道', 'XX街道', 'XX街道', 'XX街道'],
+        }]
+      });
+
+      //点击绑定按钮，发送姓名与街道给后端
+      $("#registerBtn").click(function () {
+        $.ajax({
+          type: "POST",
+          url: "http://192.168.1.105:80/updateMessages",
+          xhrFields: {
+            withCredentials: true
+          },
+          dataType: "json",
+          data: {
+            name: $('#username').val(),
+            street: $('#streetInfo').val(),
+          },
+          success: function (xhr) { //服务器（接口）返回来的数据
+            console.log(xhr.code);
+            if (xhr.code == 200) { //如果是200，说明已绑定，直接跳转到公开信访界面
+              window.location.href = './main.html';
+            } else {
+
+            }
+          }
+        });
+      });
+
+
+    })
+  </script>
+</head>
+
+<body>
+  <!--主体-->
+  <header class="wy-header">
+    <div class="wy-header-title">请输入您的真实信息</div>
+  </header>
+  <div class="weui-content">
+
+    <form id="form">
+      <div class="weui_cells weui_cells_form ">
+
+
+        <!-- 用户名 -->
+        <div class="weui_cell">
+          <div class="weui_cell_hd">
+            <label for="" class="weui_label">姓名：</label>
+          </div>
+          <div class="weui_cell_bd weui_cell_primary">
+            <input class="weui_input" type="text" id="username" placeholder="请输入您的姓名" />
+          </div>
+        </div>
+
+        <!-- 用户所在街道 -->
+        <div class="weui_cell">
+          <div class="weui_cell_hd">
+            <label for="" class="weui_label">街道:</label>
+          </div>
+          <div class="weui_cell_bd weui_cell_primary">
+            <input class="weui_input" type="text" placeholder="请选择您所在的街道" id="streetInfo" />
+          </div>
+        </div>
+
+
+        <!-- 提交绑定按钮 -->
+        <div class="weui_btn_area">
+          <a id="registerBtn" class="weui_btn weui-btn_warn">绑定</a>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <script>
+  </script>
+
+</body>
+
+</html>
